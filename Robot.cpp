@@ -4,6 +4,7 @@
 #include <queue>
 #include <algorithm>
 #include <cmath>
+
 using namespace std;
 
 struct NodeItem{
@@ -56,6 +57,7 @@ class Robot{
                         mapSP[i][j] = true;
                         root = new NodeItem(i, j, 0);
                         track.push(root);
+                        step.push(root);
                     }
                     else if(input[i][j]=='1'){
                         map[i][j] = 2;
@@ -85,9 +87,10 @@ class Robot{
         int AstarPath(queue<NodeItem*>& step);
         vector<vector<NodeItem*> > ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to);
         bool NodeFinish(NodeItem* top);
+        bool isValidStep(NodeItem*,int);
 };
 
- bool Robot::NodeFinish(NodeItem* top) {
+bool Robot::NodeFinish(NodeItem* top) {
      int count = 0;
      int r = top->row;
      int c = top->col;
@@ -107,6 +110,7 @@ void Robot::mapCopyInit() {
         }
     }
 }
+
 // shortest but also record it //return a linked-list
 /*
 FFFFFF
@@ -131,8 +135,8 @@ vector<vector<NodeItem*> > Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem
     mapCopyInit();
     queue<NodeItem*> bfs;
     stack<NodeItem*> s;
-    cout<<"Start:"<<endl;
-    PrintMapCopy();
+    //cout<<"Start:"<<endl;
+    //PrintMapCopy();
     bfs.push(from);
     while(!bfs.empty()) {
         NodeItem* current = bfs.front();
@@ -142,7 +146,7 @@ vector<vector<NodeItem*> > Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem
         bfs.pop();
         
         // case 0 : from == to
-        if(r == to->row && c == to->col) break;
+        if(r == to->row && c == to->col) { path[r][c] = current; break;}
         
         int weightUp = abs(r-1 - root->row)+ abs(c - root->col);
         int weightDown = abs(r+1 - root->row) + abs(c - root->col);
@@ -154,8 +158,8 @@ vector<vector<NodeItem*> > Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem
         if(c-1 >= 0 && mapcopy[r][c-1] == true ) { NodeItem* left = new NodeItem(r, c-1, weightLeft); mapcopy[r][c-1] = false; left->parent = current; path[r][c-1] = left; bfs.push(left); if(r == to->row && c-1 == to->col) break;}
         if(c+1 <= col-1 && mapcopy[r][c+1] == true) { NodeItem* right = new NodeItem(r, c+1, weightRight); mapcopy[r][c+1] = false; right->parent = current; path[r][c+1] = right; bfs.push(right); if(r == to->row && c+1 == to->col) break;}
     }
-    cout<<"To:"<<endl;
-    PrintMapCopy();
+    //cout<<"To:"<<endl;
+    //PrintMapCopy();
     cout<<endl;
     //NodeItem* temp = path[to->row][to->col];
     // int counts = 0;
@@ -179,139 +183,278 @@ bool Robot::AllClean() {
     return true;
 }
 
+bool Robot::isValidStep(NodeItem* now, int b) {
+    stack<NodeItem*> stk;
+    int r = now->row;
+    int c = now->col;
+    int w = now->weight;
+    NodeItem* next;
+    if(r-1 >= 0 && map[r-1][c] == 0 ) {
+        next = new NodeItem(r-1,c,w+1);
+        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem* check = valid[root->row][root->col];
+        int toRoot = 0;
+        //if(check == now) { cout<<"check == root"<<endl; }
+        while(!stk.empty()) {
+            stk.pop();
+        }
+        while(check != next) {
+            toRoot++;
+            // stk.push(check);
+            check = check->parent;
+        }
+        if(b-toRoot >0)return true;
+    }
+    else if(r+1 <= row-1 && map[r+1][c] == 0 ) {
+        next = new NodeItem(r+1,c,w+1);
+        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem* check = valid[root->row][root->col];
+        int toRoot = 0;
+        //if(check == now) { cout<<"check == root"<<endl; }
+        while(!stk.empty()) {
+            stk.pop();
+        }
+        while(check != next) {
+            toRoot++;
+            // stk.push(check);
+            check = check->parent;
+        }
+        if(b-toRoot >0)return true;
+    }
+    else if(c-1 >= 0 && map[r][c-1] == 0 ) {
+        next = new NodeItem(r,c-1,w+1);
+        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem* check = valid[root->row][root->col];
+        int toRoot = 0;
+        //if(check == now) { cout<<"check == root"<<endl; }
+        while(!stk.empty()) {
+            stk.pop();
+        }
+        while(check != next) {
+            toRoot++;
+            // stk.push(check);
+            check = check->parent;
+        }
+        if(b-toRoot >0)return true;
+    }
+    else if(c+1 <= col-1 && map[r][c+1] == 0 ) {
+        next = new NodeItem(r,c+1,w+1);
+        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem* check = valid[root->row][root->col];
+        int toRoot = 0;
+        //if(check == now) { cout<<"check == root"<<endl; }
+        while(!stk.empty()) {
+            stk.pop();
+        }
+        while(check != next) {
+            toRoot++;
+            // stk.push(check);
+            check = check->parent;
+        }
+        if(b-toRoot >0)return true;
+    }
+    //else { return false; }
+    if(map[r][c+1] && map[r][c-1] && map[r+1][c] && map[r-1][c]){return true;}
+    return false;
+}
+
 void Robot::Move() {
     int count = 0;
     stack<NodeItem*> s1;
     stack<NodeItem*> s2;
     stack<NodeItem*> s3;
+    stack<NodeItem*> s4;
+    stack<NodeItem*> back;
     queue<NodeItem*> rushback;
+    int batterylife = battery-1;
+
     while(!AllClean()) // while(!track.empty())
     {
-        int r = track.top()->row;
-        int c = track.top()->col;
-        int w = track.top()->weight;
-        NodeItem* newnode;
-        // Moving up
-        if(r-1 >= 0 && map[r-1][c] == 0 ) {
-            //visiting
-            newnode = new NodeItem(r-1, c, w+1);
-            map[r-1][c] = 1;
-            track.push(newnode);
-            step.push(newnode);
-            count++;
+        cout<<"Energy now: "<<batterylife<<endl;
+        NodeItem* now = track.top();
+        cout<<"[ "<< now->row<<", "<<now->col<<" ]"<<endl;
+        int r = now->row;
+        int c = now->col;
+        int w = now->weight;
+        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(now, root);
+        NodeItem* check = valid[root->row][root->col];
+        int toRoot = 0;
+        //if(check == now) { cout<<"check == root"<<endl; }
+        while(!s4.empty()) {
+            s4.pop();
         }
-        // Moving down
-        else if(r+1 <= row-1 && map[r+1][c] == 0 ) {
-            //visiting
-            newnode = new NodeItem(r+1, c, w+1);
-            map[r+1][c] = 1;
-            track.push(newnode);
-            step.push(newnode);
-            count++;
+        while(check != now) {
+            toRoot++;
+            s4.push(check);
+            check = check->parent;
         }
-        // Moving Left
-        else if(c-1 >= 0 && map[r][c-1] == 0 ) {
-            //visiting
-            newnode = new NodeItem(r, c-1, w+1);
-            map[r][c-1] = 1;
-            track.push(newnode);
-            step.push(newnode);
-            count++;    
-        }
-        // Moving Right
-        else if(c+1 <= col-1 && map[r][c+1] == 0 ) {
-            //visiting
-            newnode = new NodeItem(r, c+1, w+1);
-            map[r][c+1] = 1;
-            track.push(newnode);
-            step.push(newnode);
-            count++;
-        }
-        // Dead-End: 1. Search for the node that has unvisited adjancey node(s)
-        else {
-            NodeItem* from = track.top();
-            cout<<"From the dead-end node: "<<"[ "<< from->row<<", "<<from->col<<" ]"<<endl;
-            
-            while(NodeFinish(track.top())) {
-                map[track.top()->row][track.top()->col] = 2;
-                track.pop();
+        //cout<<"Before the next step: "<<"[toRoot: "<<toRoot<<", worst-next-step-energy-left: "<<batterylife - toRoot -2<<"]"<<endl;
+        cout<<endl;
+        //int worst_cost = batterylife - toRoot - 2;
+        // Normal situation
+        // this condition is causing problems if go next step can go back to charge
+        if (isValidStep(now, batterylife)) {
+            cout<<"GO! "<<endl;
+            NodeItem* newnode;
+            // Moving up
+            if(r-1 >= 0 && map[r-1][c] == 0 ) {
+                //visiting
+                newnode = new NodeItem(r-1, c, w+1);
+                map[r-1][c] = 1;
+                track.push(newnode);
+                step.push(newnode);
+                batterylife--;
             }
-            NodeItem* to = track.top();
-            cout<<"Back to the node with unvisited adjancey nodes: "<<"[ "<< to->row<<", "<<to->col<<" ]"<<endl;
-            cout<<endl;
-            
-            //need fix
-            vector<vector<NodeItem*> > destination = ShortestPath_to_R_BFS(from, to);
-            //
-            cout<<endl;
-            int counts = 0;
-            NodeItem* temp = destination[to->row][to->col];
-            while(temp != from) {
-                //cout<<"Parent: "<<"[ "<< temp->row<<", "<<temp->col<<" ]"<<endl;
-                s1.push(temp);
-                temp = temp->parent;
-                counts++;
+            // Moving down
+            else if(r+1 <= row-1 && map[r+1][c] == 0 ) {
+                //visiting
+                newnode = new NodeItem(r+1, c, w+1);
+                map[r+1][c] = 1;
+                track.push(newnode);
+                step.push(newnode);
+                batterylife--;
             }
-            
-            // if (to == root) then goRoot->parent == NULLs
-            //
-            vector<vector<NodeItem*> >goRoot = ShortestPath_to_R_BFS(to, root);
-            //need fix
-            int counting = 0;
-            NodeItem* temps = goRoot[root->row][root->col];
-            while(temps != to) {
-                s2.push(temp);
-                temps = temps->parent;
-                counting++;
+            // Moving Left
+            else if(c-1 >= 0 && map[r][c-1] == 0 ) {
+                //visiting
+                newnode = new NodeItem(r, c-1, w+1);
+                map[r][c-1] = 1;
+                track.push(newnode);
+                step.push(newnode);
+                batterylife--;    
             }
-            while(!s2.empty()) {
-                    rushback.push(s2.top());
-                    //rushback.push(s1.top());
-                    s2.pop();
+            // Moving Right
+            else if(c+1 <= col-1 && map[r][c+1] == 0 ) {
+                //visiting
+                newnode = new NodeItem(r, c+1, w+1);
+                map[r][c+1] = 1;
+                track.push(newnode);
+                step.push(newnode);
+                batterylife--;
+            }
+            // Dead-End: 1. Search for the node that has unvisited adjancey node(s)
+            else {
+                NodeItem* from = track.top();
+                cout<<"From the dead-end node: "<<"[ "<< from->row<<", "<<from->col<<" ]"<<endl;
+                
+                while(NodeFinish(track.top())) {
+                    map[track.top()->row][track.top()->col] = 2;
+                    track.pop();
                 }
-            // it is safe to go 
-            if(counts+step.size()+counting <= battery) {
+                NodeItem* to = track.top();
+                cout<<"Back to the node with unvisited adjancey nodes: "<<"[ "<< to->row<<", "<<to->col<<" ]"<<endl;
+                cout<<endl;
+                
+                //need fix
+                vector<vector<NodeItem*> > destination = ShortestPath_to_R_BFS(from, to);
+                //
+                cout<<endl;
+                int counts = 0;
+                NodeItem* temp = destination[to->row][to->col];
+                //clear s1
                 while(!s1.empty()) {
-                    step.push(s1.top());
-                    //rushback.push(s1.top());
                     s1.pop();
                 }
-            }
-            //  need to recharge first
-            else {
-                cout<<"\nRecharge: "<<(counts+step.size()+counting)<<" > "<<battery<<endl;
-                /*Recharge*/
-                //need fix
-                vector<vector<NodeItem*> >goCharge = ShortestPath_to_R_BFS(from, root);
+                while(temp != from) {
+                    s1.push(temp);
+                    temp = temp->parent;
+                    counts++;
+                }
+                
+                // if (to == root) then goRoot->parent == NULLs
+                // need fix
+                vector<vector<NodeItem*> >goRoot = ShortestPath_to_R_BFS(to, root);
                 //
-                NodeItem* tempss = goCharge[root->row][root->col];
-                while(tempss != from) {
-                    s3.push(tempss);
-                    tempss = tempss->parent;
+                int counting = 0;
+                NodeItem* temps = goRoot[root->row][root->col];
+                // clear s2
+                while(!s2.empty()) {
+                    s2.pop();
                 }
-                while(!s3.empty()) {
-                    step.push(s3.top());
-                    s3.pop();
+                while(temps != to) {
+                    s2.push(temp);
+                    temps = temps->parent;
+                    counting++;
                 }
-                /*Rushback*/
-                //need fix
-                while(!rushback.empty()) {
-                    step.push(rushback.front());
-                    rushback.pop();
+                while(!s2.empty()) {
+                        rushback.push(s2.top());
+                        s2.pop();
                 }
+                // pop root
+                rushback.pop();
+                // it is safe to go 
+                if(counts+step.size()+counting <= battery) {
+                    while(!s1.empty()) {
+                        step.push(s1.top());
+                        //rushback.push(s1.top());
+                        s1.pop();
+                        batterylife--;
+                    }
+                }
+                //  need to recharge first
+                else {
+                    cout<<"\nRecharge: "<<(counts+step.size()+counting)<<" > "<<battery<<endl;
+                    /*Recharge*/
+                    //need fix
+                    vector<vector<NodeItem*> >goCharge = ShortestPath_to_R_BFS(from, root);
+                    //
+                    NodeItem* tempss = goCharge[root->row][root->col];
+                    // clear s3
+                    while(!s3.empty()) {
+                        s3.pop();
+                    }
+                    while(tempss != from) {
+                        s3.push(tempss);
+                        tempss = tempss->parent;
+                    }
+                    while(!s3.empty()) {
+                        step.push(s3.top());
+                        s3.pop();
+                    }
+                    batterylife = battery;
+                    /*Rushback*/
+                    //need fix
+                    
+                    while(!rushback.empty()) {
+                        step.push(rushback.front());
+                        rushback.pop();
+                        batterylife--;
+                    }
 
+                }
+                //now shortestpath_goRoot(from, to) (need to recharge?) then same route but reverse shortestpath_goRoot(to, from)
+                //calculate battery life
+                //Recharge()
             }
-
-            //count += counts;
-            //now shortestpath_goRoot(from, to) (need to recharge?) then same route but reverse shortestpath_goRoot(to, from)
-            //calculate battery life
-            //Recharge()
         }
-        
+        // Rechrge time: cannot afford to go foward 現在包含了 deadend 會無限來回
+        else {
+            cout<<"Recharge time!"<<endl;
+            /* Recharge */
+            while(!s4.empty()) {
+                cout<<"[ "<< s4.top()->row<<", "<<s4.top()->col<<" ]"<<endl;
+                step.push(s4.top());
+                back.push(s4.top());
+                s4.pop();
+            }
+            batterylife = battery;
+            /* Rushback */
+            cout<<"\nRushback"<<endl;
+            //pop out root
+            back.pop();
+            while(!back.empty()) {
+                cout<<"[ "<< back.top()->row<<", "<<back.top()->col<<" ]"<<endl;
+                step.push(back.top());
+                back.pop();
+                batterylife--;
+            }
+            step.push(track.top());
+        }
         PrintMap();
         cout<<"step: "<<step.size()<<endl;
         cout<<endl;      
     }
+    //while loop ends
     /*
     After all clean if (stack.top() != root) then shortestPath back to root
     */
@@ -319,7 +462,6 @@ void Robot::Move() {
    vector<vector<NodeItem*> >Home = ShortestPath_to_R_BFS(track.top(), root);
    NodeItem* temp = Home[root->row][root->col];
     while(temp != track.top()) {
-        //cout<<"Parent: "<<"[ "<< temp->row<<", "<<temp->col<<" ]"<<endl;
         s3.push(temp);
         temp = temp->parent;
     }
