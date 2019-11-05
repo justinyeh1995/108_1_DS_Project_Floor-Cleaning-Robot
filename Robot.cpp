@@ -210,7 +210,7 @@ bool Robot::isValidStep(NodeItem* now, int b) {
         vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
-        //if(check == now) { cout<<"check == root"<<endl; }
+
         while(!stk.empty()) {
             stk.pop();
         }
@@ -226,7 +226,7 @@ bool Robot::isValidStep(NodeItem* now, int b) {
         vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
-        //if(check == now) { cout<<"check == root"<<endl; }
+
         while(!stk.empty()) {
             stk.pop();
         }
@@ -242,7 +242,6 @@ bool Robot::isValidStep(NodeItem* now, int b) {
         vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
-        //if(check == now) { cout<<"check == root"<<endl; }
         while(!stk.empty()) {
             stk.pop();
         }
@@ -266,20 +265,19 @@ void Robot::Move() {
     stack<NodeItem*> s4;
     stack<NodeItem*> back;
     queue<NodeItem*> rushback;
-    int batterylife = battery-1;
+    int batterylife = battery;
 
     while(!AllClean()) // while(!track.empty())
     {
         cout<<"Energy now: "<<batterylife<<endl;
         NodeItem* now = track.top();
-        cout<<"[ "<< now->row<<", "<<now->col<<" ]"<<endl;
+        cout<<"Now position: "<<"[ "<< now->row<<", "<<now->col<<" ]"<<endl;
         int r = now->row;
         int c = now->col;
         int w = now->weight;
         vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(now, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
-        //if(check == now) { cout<<"check == root"<<endl; }
         while(!s4.empty()) {
             s4.pop();
         }
@@ -288,13 +286,11 @@ void Robot::Move() {
             s4.push(check);
             check = check->parent;
         }
-        //cout<<"Before the next step: "<<"[toRoot: "<<toRoot<<", worst-next-step-energy-left: "<<batterylife - toRoot -2<<"]"<<endl;
         cout<<endl;
-        //int worst_cost = batterylife - toRoot - 2;
         // Normal situation
-        // this condition is causing problems if go next step can go back to charge
         if (isValidStep(now, batterylife)) {
             cout<<"GO! "<<endl;
+            cout<<endl;
             NodeItem* newnode;
             // Moving up
             if(r-1 >= 0 && map[r-1][c] == 0 ) {
@@ -334,6 +330,7 @@ void Robot::Move() {
             }
             // Dead-End: 1. Search for the node that has unvisited adjancey node(s)
             else {
+                cout<<"DeadEnd Occurs"<<endl;
                 NodeItem* from = track.top();
                 cout<<"From the dead-end node: "<<"[ "<< from->row<<", "<<from->col<<" ]"<<endl;
                 
@@ -342,6 +339,7 @@ void Robot::Move() {
                     track.pop();
                 }
                 NodeItem* to = track.top();
+                //track.push(to);
                 cout<<"Back to the node with unvisited adjancey nodes: "<<"[ "<< to->row<<", "<<to->col<<" ]"<<endl;
                 cout<<endl;
                 
@@ -355,35 +353,38 @@ void Robot::Move() {
                 while(!s1.empty()) {
                     s1.pop();
                 }
-                while(temp != from) {
+                cout<<"from ==> to"<<endl;
+                while(temp != from) {    
                     s1.push(temp);
                     temp = temp->parent;
+                    cout<<"[ "<< s1.top()->row<<", "<<s1.top()->col<<" ]"<<endl;
                     counts++;
                 }
-                
                 // if (to == root) then goRoot->parent == NULLs
                 // need fix
                 vector<vector<NodeItem*> >goRoot = ShortestPath_to_R_BFS(to, root);
                 //
                 int counting = 0;
                 NodeItem* temps = goRoot[root->row][root->col];
+
                 // clear s2
                 while(!s2.empty()) {
                     s2.pop();
                 }
+                
                 while(temps != to) {
-                    s2.push(temp);
                     temps = temps->parent;
+                    s2.push(temps);
                     counting++;
-                }
+                } 
                 while(!s2.empty()) {
                         rushback.push(s2.top());
                         s2.pop();
                 }
                 // pop root
-                rushback.pop();
+                //rushback.pop();
                 // it is safe to go 
-                if(counts+step.size()+counting <= battery) {
+                if(batterylife - counts - counting >= 0) {
                     while(!s1.empty()) {
                         step.push(s1.top());
                         //rushback.push(s1.top());
@@ -393,7 +394,7 @@ void Robot::Move() {
                 }
                 //  need to recharge first
                 else {
-                    cout<<"\nRecharge: "<<(counts+step.size()+counting)<<" > "<<battery<<endl;
+                    cout<<"\nRecharge: "<<(counts+batterylife+counting)<<" > "<<battery<<endl;
                     /*Recharge*/
                     //need fix
                     vector<vector<NodeItem*> >goCharge = ShortestPath_to_R_BFS(from, root);
@@ -408,26 +409,25 @@ void Robot::Move() {
                         tempss = tempss->parent;
                     }
                     while(!s3.empty()) {
+                        cout<<"[ "<< s3.top()->row<<", "<<s3.top()->col<<" ]"<<endl;
                         step.push(s3.top());
                         s3.pop();
                     }
                     batterylife = battery;
                     /*Rushback*/
                     //need fix
-                    
+                    cout<<"root ==> to: "<<endl;
                     while(!rushback.empty()) {
                         step.push(rushback.front());
+                        cout<<"[ "<< rushback.front()->row<<", "<< rushback.front()->col<<" ]"<<endl;
                         rushback.pop();
                         batterylife--;
                     }
 
                 }
-                //now shortestpath_goRoot(from, to) (need to recharge?) then same route but reverse shortestpath_goRoot(to, from)
-                //calculate battery life
-                //Recharge()
             }
         }
-        // Rechrge time: cannot afford to go foward 現在包含了 deadend 會無限來回
+        // Rechrge time: 
         else {
             cout<<"Recharge time!"<<endl;
             /* Recharge */
@@ -451,14 +451,14 @@ void Robot::Move() {
             step.push(track.top());
         }
         PrintMap();
-        cout<<"step: "<<step.size()<<endl;
+        cout<<"step: "<<step.size()-1<<endl;
         cout<<endl;      
     }
     //while loop ends
     /*
     After all clean if (stack.top() != root) then shortestPath back to root
     */
-   cout<<"Timetogohome: "<<"[ "<< track.top()->row<<", "<<track.top()->col<<" ]"<<endl;
+   cout<<"Timetogohome! now at position: "<<"[ "<< track.top()->row<<", "<<track.top()->col<<" ]"<<endl;
    vector<vector<NodeItem*> >Home = ShortestPath_to_R_BFS(track.top(), root);
    NodeItem* temp = Home[root->row][root->col];
     while(temp != track.top()) {
@@ -473,7 +473,7 @@ void Robot::Move() {
 }
 
 void Robot::PrintStep() {
-    cout<<step.size()<<endl;
+    cout<<step.size() - 1<<endl;
     while(!step.empty())
     {
         cout<<"[ "<< step.front()->row<<", "<<step.front()->col<<" ]"<<endl;
@@ -525,6 +525,7 @@ int main() {
     cout<<endl;
     robot.Move();
     robot.PrintStep();
+    // Output 未寫
 }
 
 /*
