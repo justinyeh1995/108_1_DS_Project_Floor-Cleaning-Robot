@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include <stack>
-#include <queue>
-#include <algorithm>
+#include "Stack.h"
+#include "Queue.h"
+#include <vector>
 #include <cmath>
 
 using namespace std;
@@ -85,9 +85,11 @@ class Robot{
         void PrintMap();
         void PrintMapCopy();
         int AstarPath(queue<NodeItem*>& step);
-        vector<vector<NodeItem*> > ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to);
+        NodeItem*** ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to);
         bool NodeFinish(NodeItem* top);
         bool isValidStep(NodeItem*,int);
+        int steps() { return step.size()-1; }
+        void outStep(ofstream&);
 };
 
 bool Robot::NodeFinish(NodeItem* top) {
@@ -118,25 +120,24 @@ FTTTTF
 FSTTTD
 FFFFFF
 */
-vector<vector<NodeItem*> > Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to) {
-    // NodeItem** path = new NodeItem*[row];
-    // for(int i = 0; i < row; i++) {
-    //     path[i] = new NodeItem[col];
-    // }
-    // for(int i = 0; i < row; i++) {
-    //     for(int j = 0; j < col; j++) {
-    //         path[i][j] = NULL;
-    //     }
-    // }
-    vector<vector<NodeItem*> > path;
-    path.resize(row);
-    for(int i = 0; i < row; i++) { path[i].resize(col); }
+NodeItem*** Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to) {
+    NodeItem*** path = new NodeItem**[row];
+    for(int i = 0; i < row; i++) {
+        path[i] = new NodeItem*[col];
+    }
+    for(int i = 0; i < row; i++) {
+        for(int j = 0; j < col; j++) {
+            path[i][j] = NULL;
+        }
+    }
+    // vector<vector<NodeItem*> > path;
+    // path.resize(row);
+    // for(int i = 0; i < row; i++) { path[i].resize(col); }
     
     mapCopyInit();
     queue<NodeItem*> bfs;
     stack<NodeItem*> s;
-    //cout<<"Start:"<<endl;
-    //PrintMapCopy();
+
     bfs.push(from);
     while(!bfs.empty()) {
         NodeItem* current = bfs.front();
@@ -158,17 +159,7 @@ vector<vector<NodeItem*> > Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem
         if(c-1 >= 0 && mapcopy[r][c-1] == true ) { NodeItem* left = new NodeItem(r, c-1, weightLeft); mapcopy[r][c-1] = false; left->parent = current; path[r][c-1] = left; bfs.push(left); if(r == to->row && c-1 == to->col) break;}
         if(c+1 <= col-1 && mapcopy[r][c+1] == true) { NodeItem* right = new NodeItem(r, c+1, weightRight); mapcopy[r][c+1] = false; right->parent = current; path[r][c+1] = right; bfs.push(right); if(r == to->row && c+1 == to->col) break;}
     }
-    //cout<<"To:"<<endl;
-    //PrintMapCopy();
     cout<<endl;
-    //NodeItem* temp = path[to->row][to->col];
-    // int counts = 0;
-    // while(temp != from) {
-    //     cout<<"Parent: "<<"[ "<< temp->row<<", "<<temp->col<<" ]"<<endl;
-    //     temp = temp->parent;
-    //     counts++;
-    // }
-    // cout<<"count: "<<counts<<endl;
     return path;
 }
 
@@ -191,7 +182,8 @@ bool Robot::isValidStep(NodeItem* now, int b) {
     NodeItem* next;
     if(r-1 >= 0 && map[r-1][c] == 0 ) {
         next = new NodeItem(r-1,c,w+1);
-        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        //vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem*** valid = ShortestPath_to_R_BFS(next, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
         //if(check == now) { cout<<"check == root"<<endl; }
@@ -207,7 +199,8 @@ bool Robot::isValidStep(NodeItem* now, int b) {
     }
     else if(r+1 <= row-1 && map[r+1][c] == 0 ) {
         next = new NodeItem(r+1,c,w+1);
-        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        //vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem*** valid = ShortestPath_to_R_BFS(next, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
 
@@ -223,7 +216,8 @@ bool Robot::isValidStep(NodeItem* now, int b) {
     }
     else if(c-1 >= 0 && map[r][c-1] == 0 ) {
         next = new NodeItem(r,c-1,w+1);
-        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        //vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem*** valid = ShortestPath_to_R_BFS(next, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
 
@@ -239,7 +233,8 @@ bool Robot::isValidStep(NodeItem* now, int b) {
     }
     else if(c+1 <= col-1 && map[r][c+1] == 0 ) {
         next = new NodeItem(r,c+1,w+1);
-        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        //vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(next, root);
+        NodeItem*** valid = ShortestPath_to_R_BFS(next, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
         while(!stk.empty()) {
@@ -275,7 +270,8 @@ void Robot::Move() {
         int r = now->row;
         int c = now->col;
         int w = now->weight;
-        vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(now, root);
+        //vector<vector<NodeItem*> > valid = ShortestPath_to_R_BFS(now, root);
+        NodeItem*** valid = ShortestPath_to_R_BFS(now, root);
         NodeItem* check = valid[root->row][root->col];
         int toRoot = 0;
         while(!s4.empty()) {
@@ -344,8 +340,9 @@ void Robot::Move() {
                 cout<<endl;
                 
                 //need fix
-                vector<vector<NodeItem*> > destination = ShortestPath_to_R_BFS(from, to);
+                //vector<vector<NodeItem*> > destination = ShortestPath_to_R_BFS(from, to);
                 //
+                NodeItem*** destination = ShortestPath_to_R_BFS(from, to);
                 cout<<endl;
                 int counts = 0;
                 NodeItem* temp = destination[to->row][to->col];
@@ -362,7 +359,8 @@ void Robot::Move() {
                 }
                 // if (to == root) then goRoot->parent == NULLs
                 // need fix
-                vector<vector<NodeItem*> >goRoot = ShortestPath_to_R_BFS(to, root);
+                //vector<vector<NodeItem*> >goRoot = ShortestPath_to_R_BFS(to, root);
+                NodeItem***goRoot = ShortestPath_to_R_BFS(to, root);
                 //
                 int counting = 0;
                 NodeItem* temps = goRoot[root->row][root->col];
@@ -397,8 +395,9 @@ void Robot::Move() {
                     cout<<"\nRecharge: "<<(counts+batterylife+counting)<<" > "<<battery<<endl;
                     /*Recharge*/
                     //need fix
-                    vector<vector<NodeItem*> >goCharge = ShortestPath_to_R_BFS(from, root);
+                    //vector<vector<NodeItem*> >goCharge = ShortestPath_to_R_BFS(from, root);
                     //
+                    NodeItem***goCharge = ShortestPath_to_R_BFS(from, root);
                     NodeItem* tempss = goCharge[root->row][root->col];
                     // clear s3
                     while(!s3.empty()) {
@@ -459,7 +458,8 @@ void Robot::Move() {
     After all clean if (stack.top() != root) then shortestPath back to root
     */
    cout<<"Timetogohome! now at position: "<<"[ "<< track.top()->row<<", "<<track.top()->col<<" ]"<<endl;
-   vector<vector<NodeItem*> >Home = ShortestPath_to_R_BFS(track.top(), root);
+   //vector<vector<NodeItem*> >Home = ShortestPath_to_R_BFS(track.top(), root);
+   NodeItem***Home = ShortestPath_to_R_BFS(track.top(), root);
    NodeItem* temp = Home[root->row][root->col];
     while(temp != track.top()) {
         s3.push(temp);
@@ -477,6 +477,14 @@ void Robot::PrintStep() {
     while(!step.empty())
     {
         cout<<"[ "<< step.front()->row<<", "<<step.front()->col<<" ]"<<endl;
+        step.pop();
+    }
+}
+
+void Robot::outStep(ofstream& outFile) {
+    while(!step.empty())
+    {
+        outFile<<step.front()->row<<" "<<step.front()->col<<endl;
         step.pop();
     }
 }
@@ -524,8 +532,11 @@ int main() {
     robot.PrintMap();
     cout<<endl;
     robot.Move();
-    robot.PrintStep();
+    //robot.PrintStep();
     // Output 未寫
+    ofstream outFile("final.path", ios::out); 
+    outFile<<robot.steps()<<endl;
+    robot.outStep(outFile);
 }
 
 /*
