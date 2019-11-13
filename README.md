@@ -1,4 +1,5 @@
 # Floor Cleaning Robot
-### run with
+### compile with
 > g++ Robot_ver2.cpp -o ver2
+### execute with
 >./ver2
