@@ -342,15 +342,7 @@ void Robot::Move() {
         int r = now->row;
         int c = now->col;
         int w = now->weight;
-        /* Calculate the shortest path from now to root */
-        NodeItem* check = ShortestPath_to_R_BFS(now, root);
-        while(!s4.empty()) {
-            s4.pop();
-        }
-        while(check != now) {
-            s4.push(check);
-            check = check->parent;
-        }       
+        
 
         // Normal situation: battery is still enough 
         if (isValidStep(now, batterylife) ) {
@@ -478,6 +470,15 @@ void Robot::Move() {
         // Rechrge time: 
         else {
             //cout<<"Recharge time!"<<endl;
+            /* Calculate the shortest path from now to root */
+            NodeItem* check = ShortestPath_to_R_BFS(now, root);
+            while(!s4.empty()) {
+                s4.pop();
+            }
+            while(check != now) {
+                s4.push(check);
+                check = check->parent;
+            }       
             /* Recharge */
             while(!s4.empty()) {
                 //cout<<"[ "<< s4.top()->row<<", "<<s4.top()->col<<" ]"<<endl;
