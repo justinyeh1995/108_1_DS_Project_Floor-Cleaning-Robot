@@ -449,9 +449,9 @@ void Robot::Move() {
             }
             step.push(track.top());
         }
-        PrintMap();
-        cout<<"step: "<<step.size()-1<<endl;
-        cout<<endl;      
+        // PrintMap();
+        // cout<<"step: "<<step.size()-1<<endl;
+        // cout<<endl;      
     }
     //while loop ends
     /*
@@ -529,7 +529,7 @@ int main() {
         }
     }
     Robot robot(r,c,b,input);
-    robot.PrintMap();
+    //robot.PrintMap();
     cout<<endl;
     robot.Move();
     //robot.PrintStep();
