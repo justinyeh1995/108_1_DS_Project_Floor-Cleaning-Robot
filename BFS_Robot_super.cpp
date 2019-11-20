@@ -235,7 +235,7 @@ NodeItem* Robot::bestTravel(NodeItem* current) {
     int best = 0;
     int x = 0;
     int y = 0; 
-    if( num_node <= 11000) {
+    // if( num_node <= 11000) {
         for (int i  = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
                 if (map[i][j] == 0 ) {
@@ -250,17 +250,17 @@ NodeItem* Robot::bestTravel(NodeItem* current) {
                 } 
             }
         }
-    }
-    else {
-        for (int i  = 0; i < row; i++) {
-        for (int j = 0; j < col; j++) {
-            if (map[i][j] == 0 ) {
-                x = i;
-                y = j;
-                }
-            } 
-        }
-    }
+    // }
+    // else {
+    //     for (int i  = 0; i < row; i++) {
+    //     for (int j = 0; j < col; j++) {
+    //         if (map[i][j] == 0 ) {
+    //             x = i;
+    //             y = j;
+    //             }
+    //         } 
+    //     }
+    // }
     NodeItem* bestoption = new NodeItem(x,y,0);
     //cout<<"how many zeros on path: "<<best<<endl;
     return bestoption;
@@ -592,13 +592,13 @@ int main() {
     }
     Robot robot(r,c,b,input);
     int flag = robot.get_num_node();
-    if(flag <= 11000) {
+    // if(flag <= 11000) {
         robot.Move();
-    }
-    else{
-        cout<<"\nLarge"<<endl;
-        robot.Move_Large();
-    }
+    // }
+    // else{
+    //     cout<<"\nLarge"<<endl;
+    //     robot.Move_Large();
+    // }
     // else {
     //     cout<<"Medium"<<endl;
     //     robot.Move();
