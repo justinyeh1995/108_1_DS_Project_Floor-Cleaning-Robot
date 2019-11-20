@@ -212,7 +212,7 @@ NodeItem* Robot::bestTravel(NodeItem* current) {
     for (int i  = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             if (map[i][j] == 0 ) {
-                cout<<"comparing"<<endl;
+                // cout<<"comparing"<<endl;
                 partial[i][j] = countZeros(pathlookup[i*col+j], root, root);
                 if(partial[i][j] > best ) {
                 best = partial[i][j];
