@@ -10,9 +10,7 @@ struct NodeItem{
     int col;
     int weight; // weight = abs(x-root.row) + abs(y-root.y)
     NodeItem* parent; // used in shortest-path
-    bool hasShortestpath;
-    int shorteststeps;
-    NodeItem(int r, int c, int d):row(r),col(c),weight(d),parent(0),hasShortestpath(false){}
+    NodeItem(int r, int c, int d):row(r),col(c),weight(d),parent(0){}
     NodeItem operator=(NodeItem* n) {
         this->row = n->row;
         this->col = n->col;
@@ -34,7 +32,7 @@ class Robot{
         stack<NodeItem*> track;// a stack to store the last step
         queue<NodeItem*> step; // the path itself
         NodeItem*** path;
-        NodeItem* ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to);
+        
 
     public:
         //constructor; initinalize map, battery life, num_node and root node 
@@ -50,7 +48,6 @@ class Robot{
                 mapcopy[i] = new bool[c];
             }
             // mapping input & map and count nodes
-            cout<<"1"<<endl;
             num_node =0;
             for(int i = 0; i < r; i++) 
             {
@@ -75,7 +72,6 @@ class Robot{
                     }
                 }
             }
-            cout<<"2"<<endl;
             partial = new int*[row];
             for (int i  = 0; i < row; i++) {
                 partial[i] = new int[col];
@@ -85,10 +81,9 @@ class Robot{
                     partial[i][j] = 0;
                 }
             }
-            cout<<"3"<<endl;
             // bestTravelInit(root);
             ShortestPath_SpanningMap(root);
-            cout<<"num_node: "<<num_node<<"\nRoot: ("<<track.top()->row<<", "<<track.top()->col<<")"<<" track.size(): "<<track.size()<<endl;
+            //cout<<"num_node: "<<num_node<<"\nRoot: ("<<track.top()->row<<", "<<track.top()->col<<")"<<" track.size(): "<<track.size()<<endl;
             /*
             1 1 1 1         2 2 2 2 
             1 0 0 1   ===>  2 0 0 2  ===> num_node = 4, not including root
@@ -104,6 +99,7 @@ class Robot{
         void PrintStep();
         void PrintMap();
         NodeItem*** ShortestPath_SpanningMap(NodeItem* root);
+        NodeItem* ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to);
         bool Deadend(NodeItem* top);
         bool isValidStep(NodeItem*,int);
         void bestTravelInit();
@@ -145,6 +141,8 @@ NodeItem*** Robot::ShortestPath_SpanningMap(NodeItem* from) {
             path[i][j] = NULL;
         }
     }
+    path[root->row][root->col] = root;
+    path[root->row][root->col]->weight = 0;
     queue<NodeItem*> bfs;
     stack<NodeItem*> s;
     bfs.push(from);
@@ -195,7 +193,6 @@ NodeItem* Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to) {
         if(c+1 <= col-1 && mapcopy[r][c+1] == true) { NodeItem* right = new NodeItem(r, c+1, weightRight); mapcopy[r][c+1] = false; right->parent = current;  bfs.push(right); if(r == to->row && c+1 == to->col){ans = right; break;}}
     }
     cout<<endl;
-    ans->hasShortestpath = true;
     return ans;
 }
 int Robot::countZeros(int i, int j) {  
@@ -233,9 +230,9 @@ int Robot::countSteps_to_from(NodeItem* check, NodeItem* from, NodeItem* to) {
 NodeItem* Robot::bestTravel(NodeItem* current) {
     // return the best option
     int best = 0;
-    int x = 0;
-    int y = 0; 
-    // if( num_node <= 11000) {
+    int x = root->row;
+    int y = root->col; 
+     if( num_node <= 700000) {
         for (int i  = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
                 if (map[i][j] == 0 ) {
@@ -250,17 +247,17 @@ NodeItem* Robot::bestTravel(NodeItem* current) {
                 } 
             }
         }
-    // }
-    // else {
-    //     for (int i  = 0; i < row; i++) {
-    //     for (int j = 0; j < col; j++) {
-    //         if (map[i][j] == 0 ) {
-    //             x = i;
-    //             y = j;
-    //             }
-    //         } 
-    //     }
-    // }
+    }
+    else {
+        for (int i  = 0; i < row; i++) {
+        for (int j = 0; j < col; j++) {
+            if (map[i][j] == 0 ) {
+                x = i;
+                y = j;
+                }
+            } 
+        }
+    }
     NodeItem* bestoption = new NodeItem(x,y,0);
     //cout<<"how many zeros on path: "<<best<<endl;
     return bestoption;
@@ -325,7 +322,7 @@ void Robot::pushSteps(NodeItem* temp, NodeItem* from) {
         c = s.top()->col; 
         map[r][c] = 1;
         track.push(s.top());
-        cout<<"[ "<< s.top()->row<<", "<<s.top()->col<<" ]"<<endl;
+        //cout<<"[ "<< s.top()->row<<", "<<s.top()->col<<" ]"<<endl;
         s.pop();
     }
 }
@@ -344,7 +341,7 @@ void Robot::pushSteps_to_from(NodeItem* temp, NodeItem* from, NodeItem* to) {
         c = s.top()->col; 
         map[r][c] = 1;
         track.push(s.top());
-        cout<<"[ "<< s.top()->row<<", "<<s.top()->col<<" ]"<<endl;
+        //cout<<"[ "<< s.top()->row<<", "<<s.top()->col<<" ]"<<endl;
         s.pop();
     }
 }
@@ -359,7 +356,7 @@ void Robot::pushSteps_toRoot(NodeItem* temp, NodeItem* from) {
         c = temp->col;
         step.push(temp);
         map[r][c] = 1;
-        cout<<"[ "<< r<<", "<<c<<" ]"<<endl;
+        //cout<<"[ "<< r<<", "<<c<<" ]"<<endl;
     }
 }
 
@@ -370,18 +367,32 @@ void Robot::Move() {
     while(!AllClean()) 
     {
         
-        cout<<"Energy now: "<<batterylife<<endl;
+        //cout<<"Energy now: "<<batterylife<<endl;
         if(batterylife < 0) break;
         NodeItem* now = track.top();
-        cout<<"Now position: "<<"[ "<< now->row<<", "<<now->col<<" ]"<<endl;
+        //cout<<"Now position: "<<"[ "<< now->row<<", "<<now->col<<" ]"<<endl;
         int r = now->row;
         int c = now->col;
         int w = now->weight;
         
+        if(track.size()==1 && step.size()>1) {
+            int x,y;
+            for(int i = 0; i < row; i++) {
+                for(int j = 0; j < col; j++) {
+                    if(map[i][j] == 0) {
+                        x = i;
+                        y = j;
+                        break;
+                    }
+                }
+            }
+            NodeItem* temp = path[x][y];
+            pushSteps(temp,root);
+        }
 
         // Normal situation: battery is still enough 
-        if (isValidStep(now, batterylife) ) {
-            cout<<"GO! "<<endl;
+        else if (isValidStep(now, batterylife) ) {
+            //cout<<"GO! "<<endl;
             NodeItem* newnode;
             // Moving up
             if(r-1 >= 0 && map[r-1][c] == 0 ) {
@@ -423,19 +434,19 @@ void Robot::Move() {
         }
         // Dead-End: 1. Search for the node that has unvisited adjancey node(s)
         else if ( Deadend(track.top()) ) {
-            cout<<"DeadEnd Occurs"<<endl;
+            //cout<<"DeadEnd Occurs"<<endl;
             NodeItem* from = track.top();
-            cout<<"From the dead-end node: "<<"[ "<< from->row<<", "<<from->col<<" ]"<<endl;
-            while(Deadend(track.top())) {
+            //cout<<"From the dead-end node: "<<"[ "<< from->row<<", "<<from->col<<" ]"<<endl;
+            while(Deadend(track.top())&& track.size()>1) {
                 track.pop();
             }
+            // if(track.size()==1)break; 
             NodeItem* to = track.top();
-            
-            cout<<"Back to the node with unvisited adjancey nodes: "<<"[ "<< to->row<<", "<<to->col<<" ]"<<endl;
+            //cout<<"Back to the node with unvisited adjancey nodes: "<<"[ "<< to->row<<", "<<to->col<<" ]"<<endl;
             //cout<<endl;            
             NodeItem* temp = ShortestPath_to_R_BFS(from, to);
             int counts = countSteps_to_from(temp, from,to);
-            cout<<"counts: "<<counts<<endl;
+            //cout<<"counts: "<<counts<<endl;
             cout<<endl;
             // if (to == root) then goRoot->parent == NULLs
             int counting = path[to->row][to->col]->weight;
@@ -443,7 +454,7 @@ void Robot::Move() {
             
             // it is safe to go 
             if((batterylife - counts - counting  -2) >= 0) {
-                // cout<<"Safe to go!"<<endl;
+                //cout<<"Safe to go!"<<endl;
                 pushSteps_to_from(temp, from,  to); 
                 batterylife -= counts;
             }
@@ -456,7 +467,7 @@ void Robot::Move() {
                 batterylife = battery;
                 /*go to the best path*/
                 NodeItem* best = bestTravel(root);
-                cout<<"go to the best node after recharge: "<<"[ "<< best->row<<", "<<best->col<<" ]"<<endl;
+                //cout<<"go to the best node after recharge: "<<"[ "<< best->row<<", "<<best->col<<" ]"<<endl;
                 //NodeItem* newplace = ShortestPath_to_R_BFS(root, best);
                 int steps = countSteps(best->row,best->col);
                 pushSteps(path[best->row][best->col], root);
@@ -466,15 +477,15 @@ void Robot::Move() {
         }
         // Rechrge time: 
         else {
-            cout<<"Recharge time!"<<endl;
+            //cout<<"Recharge time!"<<endl;
             /* Calculate the shortest path from now to root */
             //NodeItem* check = ShortestPath_to_R_BFS(now, root);
             pushSteps_toRoot(path[now->row][now->col], root); 
             batterylife = battery;
-            cout<<"Now at: "<<"[ "<<track.top()->row<<", "<<track.top()->col<<" ]"<<endl;
+            //cout<<"Now at: "<<"[ "<<track.top()->row<<", "<<track.top()->col<<" ]"<<endl;
             //cout<<"energy: "<<batterylife<<endl;
             NodeItem* best = bestTravel(track.top());
-            cout<<"go to the best node after recharge: "<<"[ "<< best->row<<", "<<best->col<<" ]"<<endl;
+            //cout<<"go to the best node after recharge: "<<"[ "<< best->row<<", "<<best->col<<" ]"<<endl;
             //NodeItem*temp = ShortestPath_to_R_BFS(track.top(), best);
             int steps = countSteps(best->row, best->col); // top == root
             pushSteps(path[best->row][best->col], root); 
@@ -488,16 +499,6 @@ void Robot::Move() {
     After all cleaned, walk shortestPath back to root
     */
     cout<<"Timetogohome! now at position: "<<"[ "<< track.top()->row<<", "<<track.top()->col<<" ]"<<endl;
-    // NodeItem* temp = ShortestPath_to_R_BFS(track.top(), root);
-    // while(temp != track.top()) {
-    //     s3.push(temp);
-    //     temp = temp->parent;
-    // }
-    // while(!s3.empty()) {
-    //     step.push(s3.top());
-    //     //cout<<"[ "<< s3.top()->row<<", "<<s3.top()->col<<" ]"<<endl;
-    //     s3.pop();
-    // }
     pushSteps_toRoot(path[track.top()->row][track.top()->col], root); 
     cout<<"Total: "<<steps()<<endl;
 }
@@ -511,7 +512,7 @@ void Robot::Move_Large() {
             for(int j = 0; j < col; j++) {
                 if(map[i][j] == 0) {
                     // int count = countSteps(pathlookup[i*col+j],root,root);
-                    cout<<"Go"<<endl;
+                    //cout<<"Go"<<endl;
                     NodeItem* temp = path[i][j];
                     pushSteps(temp,root);
                     // step_to_root[i][j] = countSteps(pathlookup[i*col+j],root,0);
@@ -521,8 +522,8 @@ void Robot::Move_Large() {
                     int y = j;
 
                     while(batterylife - s >= 2) {
-                        cout<<"batterylife: "<<batterylife<<endl;
-                        cout<<"Wander"<<endl;
+                        // cout<<"batterylife: "<<batterylife<<endl;
+                        // cout<<"Wander"<<endl;
                         
                         if(map[x+1][y] == 0) {batterylife--; step.push(path[x+1][y]); map[x+1][y] = 1; x++;}
                         else if(map[x][y+1] == 0) { batterylife--; step.push(path[x][y+1]);map[x][y+1] = 1;y++;}
@@ -531,11 +532,11 @@ void Robot::Move_Large() {
                         else {cout<<"DeadEnd"<<endl; break;}
                         
                         s = path[x][y]->weight;
-                        cout<<"( "<<path[x][y]->row<<","<<path[x][y]->col<<" )"<<endl;
+                        //cout<<"( "<<path[x][y]->row<<","<<path[x][y]->col<<" )"<<endl;
                         // PrintMap();
                         // cout<<endl;
                     }
-                    cout<<"Recharge"<<endl;
+                    //cout<<"Recharge"<<endl;
                     NodeItem* temps =  path[x][y];
                     pushSteps_toRoot(temps,root);
                     batterylife = battery;
@@ -592,18 +593,15 @@ int main() {
     }
     Robot robot(r,c,b,input);
     int flag = robot.get_num_node();
-    // if(flag <= 11000) {
-        robot.Move();
-    // }
-    // else{
+    //  if(flag == 851585) {
     //     cout<<"\nLarge"<<endl;
     //     robot.Move_Large();
-    // }
-    // else {
-    //     cout<<"Medium"<<endl;
-    //     robot.Move();
-    // }
-    
+      
+    //  }
+    //  else{
+         robot.Move();
+    //  }
+    cout<<"num_of_node: "<<flag<<endl;
     ofstream outFile("final.path", ios::out); 
     outFile<<robot.steps()<<endl;
     // robot.PrintMap();
