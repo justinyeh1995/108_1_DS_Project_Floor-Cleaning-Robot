@@ -41,11 +41,13 @@ class Robot{
             map = new int*[r];
             mapSP = new bool*[r];
             mapcopy = new bool*[r];
+            partial = new int*[r];
             for(int i =0; i < r; i++)
             {
                 map[i] = new int[c];
                 mapSP[i] = new bool[c];
                 mapcopy[i] = new bool[c];
+                partial[i] = new int[c];
             }
             // mapping input & map and count nodes
             num_node =0;
@@ -57,6 +59,7 @@ class Robot{
                     {
                         map[i][j] = 1;
                         mapSP[i][j] = true;
+                        partial[i][j] = 0;
                         root = new NodeItem(i, j, 0);
                         track.push(root); // initialize the position 
                         step.push(root);  // first step is root 
@@ -67,23 +70,14 @@ class Robot{
                     }
                     else{
                         map[i][j] = 0;
+                        partial[i][j] = 0;
                         num_node++; // count zeros
                         mapSP[i][j] = true;
                     }
                 }
             }
-            partial = new int*[row];
-            for (int i  = 0; i < row; i++) {
-                partial[i] = new int[col];
-            }
-            for (int i  = 0; i < row; i++) {
-                for (int j = 0; j < col; j++) {
-                    partial[i][j] = 0;
-                }
-            }
-            // bestTravelInit(root);
+            
             ShortestPath_SpanningMap(root);
-            //cout<<"num_node: "<<num_node<<"\nRoot: ("<<track.top()->row<<", "<<track.top()->col<<")"<<" track.size(): "<<track.size()<<endl;
             /*
             1 1 1 1         2 2 2 2 
             1 0 0 1   ===>  2 0 0 2  ===> num_node = 4, not including root
@@ -99,7 +93,7 @@ class Robot{
         void PrintStep();
         void PrintMap();
         NodeItem*** ShortestPath_SpanningMap(NodeItem* root);
-        NodeItem* ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to);
+        NodeItem* ShortestPath_from_to(NodeItem* from, NodeItem* to);
         bool Deadend(NodeItem* top);
         bool isValidStep(NodeItem*,int);
         void bestTravelInit();
@@ -109,7 +103,6 @@ class Robot{
         int countSteps_to_from(NodeItem* check, NodeItem* from, NodeItem* to);
         int countSteps(int i , int j);
         void pushSteps(NodeItem* path, NodeItem* from);
-        void pushSteps_to_from(NodeItem* temp, NodeItem* from, NodeItem* to); 
         void pushSteps_toRoot(NodeItem* temp, NodeItem* from);
         int steps() { return step.size()-1; }
         void outStep(ofstream&);
@@ -167,7 +160,7 @@ void Robot::mapCopyInit() {
         }
     }
 }
-NodeItem* Robot::ShortestPath_to_R_BFS(NodeItem* from, NodeItem* to) { 
+NodeItem* Robot::ShortestPath_from_to(NodeItem* from, NodeItem* to) { 
     mapCopyInit();
     queue<NodeItem*> bfs;
     stack<NodeItem*> s;
@@ -253,7 +246,7 @@ NodeItem* Robot::bestTravel(NodeItem* current) {
         for (int j = 0; j < col; j++) {
             if (map[i][j] == 0 ) {
                 x = i;
-                y = j;
+                y = j;  
                 }
             } 
         }
@@ -326,25 +319,7 @@ void Robot::pushSteps(NodeItem* temp, NodeItem* from) {
         s.pop();
     }
 }
-void Robot::pushSteps_to_from(NodeItem* temp, NodeItem* from, NodeItem* to) {
-    stack<NodeItem*> s;
-    while (!s.empty()) {s.pop();}
-    int r = 0;
-    int c = 0;
-    while(temp != from) {
-        s.push(temp);
-        temp = temp->parent;
-    } 
-    while (!s.empty()) {
-        step.push(s.top());
-        r = s.top()->row;
-        c = s.top()->col; 
-        map[r][c] = 1;
-        track.push(s.top());
-        //cout<<"[ "<< s.top()->row<<", "<<s.top()->col<<" ]"<<endl;
-        s.pop();
-    }
-}
+
 void Robot::pushSteps_toRoot(NodeItem* temp, NodeItem* from) {
     stack<NodeItem*> s;
     while (!s.empty()) {s.pop();}
@@ -367,14 +342,15 @@ void Robot::Move() {
     while(!AllClean()) 
     {
         
+        if(batterylife < 0) { cout<<"Invalid test case"<<endl; break;}
         //cout<<"Energy now: "<<batterylife<<endl;
-        if(batterylife < 0) break;
         NodeItem* now = track.top();
         //cout<<"Now position: "<<"[ "<< now->row<<", "<<now->col<<" ]"<<endl;
         int r = now->row;
         int c = now->col;
         int w = now->weight;
-        
+
+        // Special case addressing
         if(track.size()==1 && step.size()>1) {
             int x,y;
             for(int i = 0; i < row; i++) {
@@ -389,7 +365,6 @@ void Robot::Move() {
             NodeItem* temp = path[x][y];
             pushSteps(temp,root);
         }
-
         // Normal situation: battery is still enough 
         else if (isValidStep(now, batterylife) ) {
             //cout<<"GO! "<<endl;
@@ -440,11 +415,10 @@ void Robot::Move() {
             while(Deadend(track.top())&& track.size()>1) {
                 track.pop();
             }
-            // if(track.size()==1)break; 
             NodeItem* to = track.top();
             //cout<<"Back to the node with unvisited adjancey nodes: "<<"[ "<< to->row<<", "<<to->col<<" ]"<<endl;
             //cout<<endl;            
-            NodeItem* temp = ShortestPath_to_R_BFS(from, to);
+            NodeItem* temp = ShortestPath_from_to(from, to);
             int counts = countSteps_to_from(temp, from,to);
             //cout<<"counts: "<<counts<<endl;
             cout<<endl;
@@ -455,7 +429,7 @@ void Robot::Move() {
             // it is safe to go 
             if((batterylife - counts - counting  -2) >= 0) {
                 //cout<<"Safe to go!"<<endl;
-                pushSteps_to_from(temp, from,  to); 
+                pushSteps(temp, from); 
                 batterylife -= counts;
             }
             //  need to recharge first
@@ -555,14 +529,6 @@ void Robot::outStep(ofstream& outFile) {
     }
 }
 
-void Robot::PrintStep() {
-    while(!step.empty())
-    {
-        cout<<step.front()->row<<" "<<step.front()->col<<" "<<endl;
-        step.pop();
-    }
-}
-
 void Robot::PrintMap(){
     for(int i = 0; i < row; i++)
     {
@@ -605,7 +571,6 @@ int main() {
     ofstream outFile("final.path", ios::out); 
     outFile<<robot.steps()<<endl;
     // robot.PrintMap();
-    //robot.PrintStep();
      robot.outStep(outFile);
 }
 
